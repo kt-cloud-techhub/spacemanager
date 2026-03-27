@@ -1,0 +1,36 @@
+# Maven
+target/
+*.class
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# IDE
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Node
+node_modules/
+dist/
+dist-ssr
+*.local
+
+# Environment
+.env
+.env.*.local
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project docs (Not needed in Git if they are already in brain, but usually we keep them)
+# aidlc-docs/
