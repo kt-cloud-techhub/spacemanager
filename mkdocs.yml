@@ -1,0 +1,55 @@
+site_name: SpaceManager AI-DLC Workspace
+theme:
+  name: material
+  language: ko
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Inception (기획/설계):
+      - PRD (요구사항): inception/requirements/prd.md
+      - User Stories (시나리오): inception/user-stories/user-stories.md
+      - System Design (상세 설계): inception/application-design/system-design.md
+  - Construction (구현/테스트):
+      - DB Schema (구현 계획): construction/plans/schema.sql
+  - Status (진척/감사):
+      - Project State: aidlc-state.md
+      - Audit Log: audit.md
+
+docs_dir: aidlc-docs
+site_dir: site
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables

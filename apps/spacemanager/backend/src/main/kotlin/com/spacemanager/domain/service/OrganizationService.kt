@@ -18,6 +18,28 @@ class OrganizationService(
         return orgRepository.findAll().map { it.toDto() }
     }
 
+    @Transactional(readOnly = true)
+    fun getOrganizationTree(): List<com.spacemanager.web.dto.OrganizationTreeDto> {
+        val allOrgs = orgRepository.findAll()
+        val rootOrgs = allOrgs.filter { it.parent == null }
+        
+        return rootOrgs.map { buildTree(it, allOrgs) }
+    }
+
+    private fun buildTree(org: Organization, allOrgs: List<Organization>): com.spacemanager.web.dto.OrganizationTreeDto {
+        val children = allOrgs.filter { it.parent?.id == org.id }
+        val memberCount = getMemberCount(org.id!!)
+        
+        return com.spacemanager.web.dto.OrganizationTreeDto(
+            id = org.id!!,
+            name = org.name,
+            level = org.level,
+            isExecutiveUnit = org.isExecutiveUnit,
+            memberCount = memberCount,
+            children = children.map { buildTree(it, allOrgs) }
+        )
+    }
+
     @Transactional
     fun createOrganization(dto: OrganizationDto): OrganizationDto {
         val parent = dto.parentId?.let { orgRepository.findById(it).orElseThrow { RuntimeException("Parent not found") } }

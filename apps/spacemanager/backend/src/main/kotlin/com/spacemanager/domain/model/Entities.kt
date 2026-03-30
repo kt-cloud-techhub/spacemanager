@@ -61,7 +61,7 @@ class Floor(
     @Column(name = "map_image_url")
     var mapImageUrl: String? = null,
 
-    @Column(name = "layout_data", columnDefinition = "jsonb")
+    @Column(name = "layout_data", length = 2000)
     var layoutData: String? = null,
 
     @Column(name = "created_at")
