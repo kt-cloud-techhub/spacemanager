@@ -16,7 +16,13 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-konva": "^19.2.3",
-    "use-image": "^1.1.4"
+    "use-image": "^1.1.4",
+    "@kt-cloud-front/ui-common": "file:./kcds/kt-cloud-front-ui-common-1.0.0-rc.1.tgz",
+    "@kt-cloud-front/ui-core-react": "file:./kcds/kt-cloud-front-ui-core-react-1.0.0-rc.1.tgz",
+    "@kt-cloud-front/ui-style": "file:./kcds/kt-cloud-front-ui-style-1.0.0-rc.1.tgz",
+    "@kt-cloud-front/ui-style-react": "file:./kcds/kt-cloud-front-ui-style-react-1.0.0-rc.1.tgz",
+    "@kt-cloud-front/ui-react": "file:./kcds/kt-cloud-front-ui-react-1.0.0-rc.1.tgz",
+    "@kt-cloud-front/ui-react-grid": "file:./kcds/kt-cloud-front-ui-react-grid-1.0.0-rc.1.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

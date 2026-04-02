@@ -31,6 +31,7 @@ class SeatService(
                 seatNumber = seat.seatNumber,
                 xPos = seat.xPos,
                 yPos = seat.yPos,
+                sectionName = seat.sectionName,
                 isExecutiveSeat = seat.isExecutiveSeat,
                 status = if (reservation != null) "occupied" else "available",
                 occupantName = reservation?.user?.name,

@@ -38,6 +38,7 @@ data class SeatDto(
     val seatNumber: String,
     @get:JsonProperty("xPos") val xPos: Double,
     @get:JsonProperty("yPos") val yPos: Double,
+    val sectionName: String? = null,
     val isExecutiveSeat: Boolean,
     val status: String,
     val occupantName: String? = null,

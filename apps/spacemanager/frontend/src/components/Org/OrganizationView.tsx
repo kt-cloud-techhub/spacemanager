@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Users, Building2, Briefcase, Plus, Search, Filter } from 'lucide-react';
-import { fetchOrganizationTree } from '../../api/api';
+import { fetchOrganizationTree, uploadBulkData } from '../../api/api';
 import type { OrganizationTree } from '../../api/api';
 
 const TreeItem: React.FC<{ item: OrganizationTree; level: number }> = ({ item, level }) => {
@@ -66,20 +66,46 @@ const OrganizationView: React.FC = () => {
   const [treeData, setTreeData] = useState<OrganizationTree[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const loadTree = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchOrganizationTree();
+      setTreeData(data);
+    } catch (error) {
+      console.error('Failed to load org tree:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadTree = async () => {
-      try {
-        const data = await fetchOrganizationTree();
-        setTreeData(data);
-      } catch (error) {
-        console.error('Failed to load org tree:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadTree();
   }, []);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const result = await uploadBulkData(file);
+      if (result.status === 'Success') {
+        alert(`업로드 성공! 조직 ${result.orgsCreated}개, 인원 ${result.usersImported}명이 등록되었습니다.`);
+        loadTree(); // Refresh tree
+      } else {
+        alert(`업로드 실패: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -134,11 +160,30 @@ const OrganizationView: React.FC = () => {
                 <p className="text-5xl font-black">{treeData.reduce((acc, curr) => acc + curr.memberCount, 0)} 명</p>
               </div>
               <div className="pt-8 border-t border-indigo-500/50">
-                <p className="text-sm font-bold text-indigo-100 mb-4 italic">벌크 업데이트 가이드</p>
-                <p className="text-xs text-indigo-200 leading-relaxed font-bold">
-                  개별 조정 없이 전사 조직 개편 데이터를 일괄 등록합니다.<br/>
-                  JSON 혹은 Excel 파일을 통해 업데이트가 가능합니다.
+                <p className="text-sm font-bold text-indigo-100 mb-4 italic flex items-center">
+                   <Plus className="w-4 h-4 mr-2" /> 인사 데이터 일괄 업로드
                 </p>
+                <div className="space-y-4">
+                  <p className="text-[11px] text-indigo-200 leading-relaxed font-bold">
+                    [본부, 담당, 팀, 사번, 이름, 역할] 순서의 엑셀 파일을 업로드하여 전사 조직 및 인력 정보를 동기화합니다.
+                  </p>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden" 
+                    accept=".xlsx, .xls"
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className={`w-full py-4 bg-white text-indigo-600 font-black rounded-3xl hover:bg-indigo-50 transition-all flex items-center justify-center shadow-xl ${
+                      isUploading ? 'opacity-50 cursor-wait' : 'hover:scale-105 active:scale-95'
+                    }`}
+                  >
+                    {isUploading ? '업로드 중...' : '엑셀 파일 선택'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

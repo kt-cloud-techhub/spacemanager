@@ -8,6 +8,7 @@ export interface Floor {
   id: number;
   name: string;
   mapImageUrl: string;
+  layoutData?: string;
 }
 
 export interface Organization {
@@ -21,6 +22,7 @@ export interface Seat {
   seatNumber: string;
   xPos: number;
   yPos: number;
+  sectionName?: string;
   isExecutiveSeat: boolean;
   status: 'available' | 'occupied';
   occupantName?: string;
@@ -73,6 +75,26 @@ export const runSimulation = async (request: SimulationRequest): Promise<Record<
 
 export const applySimulation = async (assignments: Record<number, number>): Promise<void> => {
   await api.post('/simulation/apply', assignments);
+};
+
+export const uploadBulkData = async (file: File): Promise<any> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/bulk/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data;
+};
+
+export interface AssignmentSaveRequest {
+  floorId: number;
+  orgId: number;
+  areaPolygon: string;
+}
+
+export const saveAssignment = async (request: AssignmentSaveRequest): Promise<SpaceAssignment> => {
+  const response = await api.post('/assignments', request);
+  return response.data;
 };
 
 export const fetchAssignments = async (floorId: number): Promise<SpaceAssignment[]> => {

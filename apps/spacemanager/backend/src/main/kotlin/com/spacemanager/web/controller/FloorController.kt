@@ -25,22 +25,4 @@ class FloorController(
             )
         }
     }
-
-    @GetMapping("/{floorId}/assignments")
-    fun getAssignments(@PathVariable floorId: Int): List<SpaceAssignmentDto> {
-        return spaceAssignmentRepository.findAll().filter { it.floor.id == floorId }.map {
-            SpaceAssignmentDto(
-                id = it.id,
-                floorId = it.floor.id!!,
-                orgId = it.organization.id!!,
-                orgName = it.organization.name,
-                areaPolygon = it.areaPolygon ?: "",
-                color = when(it.organization.name) {
-                    "클라우드사업팀" -> "#6366F1" // Indigo
-                    "플랫폼개발팀" -> "#10B981" // Emerald
-                    else -> "#94A3B8"
-                }
-            )
-        }
-    }
 }

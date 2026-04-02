@@ -24,6 +24,8 @@ dist-ssr
 # Environment
 .env
 .env.*.local
+.npmrc
+**/.npmrc
 
 # Docker
 .docker/

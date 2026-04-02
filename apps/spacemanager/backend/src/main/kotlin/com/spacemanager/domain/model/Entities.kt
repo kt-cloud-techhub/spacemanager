@@ -32,6 +32,9 @@ class User(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    @Column(name = "employee_id", nullable = true)
+    var employeeId: String? = null,
+
     @Column(nullable = false)
     var name: String,
 
@@ -61,7 +64,7 @@ class Floor(
     @Column(name = "map_image_url")
     var mapImageUrl: String? = null,
 
-    @Column(name = "layout_data", length = 2000)
+    @Column(name = "layout_data", columnDefinition = "TEXT")
     var layoutData: String? = null,
 
     @Column(name = "created_at")
@@ -80,6 +83,9 @@ class Seat(
 
     @Column(name = "seat_number", nullable = false)
     var seatNumber: String,
+
+    @Column(name = "section_name")
+    var sectionName: String? = null,
 
     @Column(name = "x_pos", nullable = false)
     var xPos: Double,

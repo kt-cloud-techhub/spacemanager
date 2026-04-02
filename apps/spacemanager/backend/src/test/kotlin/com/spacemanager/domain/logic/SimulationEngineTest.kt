@@ -21,7 +21,7 @@ class SimulationEngineTest {
         val engine = SimulationEngine(request)
         
         val org = Organization(id = 1, name = "HQ", level = 0)
-        val exec = User(id = 10, name = "CEO", role = "Executive", organization = org)
+        val exec = User(id = 10, employeeId = "CEO001", name = "CEO", role = "Executive", organization = org)
         val floor = Floor(id = 1, name = "1F")
         val execSeat = Seat(id = 100, floor = floor, seatNumber = "E01", xPos = 0.0, yPos = 0.0, isExecutiveSeat = true)
         val normalSeat = Seat(id = 101, floor = floor, seatNumber = "N01", xPos = 1.0, yPos = 1.0, isExecutiveSeat = false)

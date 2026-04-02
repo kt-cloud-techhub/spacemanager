@@ -4,8 +4,9 @@ import FloorSelector from './components/Layout/FloorSelector';
 import OrganizationView from './components/Org/OrganizationView';
 import SettingsView from './components/Settings/SettingsView';
 import SimulationResultView from './components/Simulation/SimulationResultView';
-import { MapPin, Users, LayoutDashboard, Settings, CheckCircle, Construction, Cpu } from 'lucide-react';
-import { fetchSeats, fetchOrganizations, fetchFloors, reserveSeat, fetchAssignments, runSimulation } from './api/api';
+import AreaEditorOverlay from './components/Map/AreaEditorOverlay';
+import { MapPin, Users, LayoutDashboard, Settings, CheckCircle, Construction, Cpu, Edit3 } from 'lucide-react';
+import { fetchSeats, fetchOrganizations, fetchFloors, reserveSeat, fetchAssignments, runSimulation, saveAssignment } from './api/api';
 import type { Seat, Organization, Floor, SpaceAssignment } from './api/api';
 import floor4f from './assets/floor_4f.png';
 import floor7f from './assets/floor_7f.png';
@@ -27,6 +28,8 @@ function App() {
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [simulationResult, setSimulationResult] = useState<Record<number, number> | null>(null);
+  const [isEditingAreas, setIsEditingAreas] = useState(false);
+  const [currentPoints, setCurrentPoints] = useState<number[]>([]);
 
   const processedSeats = useMemo(() => {
     return seats.map(s => ({
@@ -87,6 +90,43 @@ function App() {
     // Refresh only if we are on dashboard or need to update data
     alert('배치 추천안이 성공적으로 반영되었습니다!');
     window.location.reload(); // Hard refresh to ensure everything's clean
+  };
+
+  const handlePointAdd = (x: number, y: number) => {
+    setCurrentPoints(prev => [...prev, x, y]);
+  };
+
+  const handleAreaSave = async (orgId: number, points: number[]) => {
+    if (points.length < 6) return; // Need at least a triangle
+
+    const floor = floors.find(f => f.name === currentFloor);
+    if (!floor) return;
+
+    const polygonStr = [];
+    for (let i = 0; i < points.length; i += 2) {
+      polygonStr.push(`${points[i]},${points[i + 1]}`);
+    }
+    const areaPolygon = polygonStr.join(';');
+
+    try {
+      setIsLoading(true);
+      await saveAssignment({
+        floorId: floor.id,
+        orgId: orgId,
+        areaPolygon: areaPolygon
+      });
+      
+      const updatedAssignments = await fetchAssignments(floor.id);
+      setAssignments(updatedAssignments);
+      setIsEditingAreas(false);
+      setCurrentPoints([]);
+      alert('팀 구역이 성공적으로 저장되었습니다!');
+    } catch (error) {
+      console.error('Failed to save area:', error);
+      alert('구역 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReserve = async () => {
@@ -159,12 +199,36 @@ function App() {
             </span>
           </div>
           <div className="flex items-center space-x-6">
+            {currentView === 'dashboard' && (
+              <button 
+                onClick={() => setIsEditingAreas(!isEditingAreas)}
+                className={`flex items-center space-x-2 px-5 py-2 rounded-2xl text-xs font-black transition-all border ${
+                  isEditingAreas 
+                    ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-lg shadow-rose-100' 
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>{isEditingAreas ? '편집 종료' : '구역 편집'}</span>
+              </button>
+            )}
             <span className="font-black bg-indigo-50 text-indigo-700 px-5 py-2 rounded-2xl text-xs border border-indigo-100 shadow-sm">클라우드사업팀</span>
           </div>
         </header>
 
         <section className="flex-1 overflow-auto p-12 bg-[#F8FAFC]">
-          <div className="max-w-[1600px] mx-auto h-full">
+          <div className="max-w-[1600px] mx-auto h-full relative">
+            {isEditingAreas && (
+              <AreaEditorOverlay 
+                currentPoints={currentPoints}
+                onSave={handleAreaSave}
+                onReset={() => setCurrentPoints([])}
+                onCancel={() => {
+                  setIsEditingAreas(false);
+                  setCurrentPoints([]);
+                }}
+              />
+            )}
             {currentView === 'dashboard' ? (
               <div className="space-y-10">
                 <div className="flex justify-between items-end">
@@ -172,7 +236,7 @@ function App() {
                     <FloorSelector currentFloor={currentFloor} onFloorChange={setCurrentFloor} />
                     <p className="mt-3 text-slate-400 text-sm font-bold flex items-center">
                       <div className="w-5 h-1 bg-indigo-400 rounded-full mr-3 animate-pulse"></div>
-                      {currentFloor}층 도면을 분석 중입니다.
+                      {isEditingAreas ? '도면을 클릭하여 팀 구역의 꼭짓점을 지정하세요.' : `${currentFloor}층 도면을 분석 중입니다.`}
                     </p>
                   </div>
                   {isLoading && (
@@ -191,6 +255,10 @@ function App() {
                         assignments={assignments}
                         onSeatSelect={setSelectedSeat} 
                         selectedSeatId={selectedSeat?.id || null} 
+                        isEditingAreas={isEditingAreas}
+                        currentPoints={currentPoints}
+                        onPointAdd={handlePointAdd}
+                        layoutData={floors.find(f => f.name === currentFloor)?.layoutData}
                       />
                     </div>
                   </div>
