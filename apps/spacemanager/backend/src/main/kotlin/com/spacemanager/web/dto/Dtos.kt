@@ -7,15 +7,18 @@ data class OrganizationDto(
     val name: String,
     val level: Int,
     val parentId: Long? = null,
-    val isExecutiveUnit: Boolean = false
+    val isExecutiveUnit: Boolean = false,
+    val memberCount: Int = 0
 )
 
 data class OrganizationTreeDto(
     val id: Long,
     val name: String,
     val level: Int,
+    val parentId: Long? = null,
     val isExecutiveUnit: Boolean,
     val memberCount: Long,
+    val directMemberCount: Long,
     val children: List<OrganizationTreeDto> = emptyList()
 )
 

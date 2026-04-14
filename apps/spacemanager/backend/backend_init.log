@@ -1,0 +1,218 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< com.spacemanager:backend >----------------------
+[INFO] Building backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.2:run (default-cli) > test-compile @ backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ backend ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ backend ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- kotlin:1.9.22:compile (compile) @ backend ---
+[INFO] Applied plugin: 'spring'
+[INFO] Applied plugin: 'jpa'
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/logic/SimulationEngine.kt: (26, 51) Unnecessary safe call on a non-null receiver of type Organization
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/logic/SimulationEngine.kt: (42, 95) Unnecessary safe call on a non-null receiver of type Organization
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/logic/SimulationEngine.kt: (48, 67) Unnecessary safe call on a non-null receiver of type Organization
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/logic/SimulationEngine.kt: (50, 70) Unnecessary safe call on a non-null receiver of type Organization
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/service/BulkUploadService.kt: (35, 13) Variable 'headerRow' is never used
+[WARNING] /Users/study/spacemanager-anti/apps/spacemanager/backend/src/main/kotlin/com/spacemanager/domain/service/OrganizationService.kt: (34, 24) Unnecessary non-null assertion (!!) on a non-null receiver of type Long
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ backend ---
+[INFO] skip non existing resourceDirectory /Users/study/spacemanager-anti/apps/spacemanager/backend/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ backend ---
+[INFO] Changes detected - recompiling the module! :dependency
+[INFO] 
+[INFO] --- kotlin:1.9.22:test-compile (test-compile) @ backend ---
+[INFO] Applied plugin: 'spring'
+[INFO] Applied plugin: 'jpa'
+[INFO] 
+[INFO] <<< spring-boot:3.2.2:run (default-cli) < test-compile @ backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.2:run (default-cli) @ backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+[32m :: Spring Boot :: [39m              [2m (v3.2.2)[0;39m
+
+[2m2026-04-10T16:57:12.570+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mc.s.SpaceManagerApplicationKt           [0;39m [2m:[0;39m Starting SpaceManagerApplicationKt using Java 23.0.2 with PID 27998 (/Users/study/spacemanager-anti/apps/spacemanager/backend/target/classes started by angela.shin in /Users/study/spacemanager-anti/apps/spacemanager/backend)
+[2m2026-04-10T16:57:12.571+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mc.s.SpaceManagerApplicationKt           [0;39m [2m:[0;39m No active profile set, falling back to 1 default profile: "default"
+[2m2026-04-10T16:57:12.798+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[2m2026-04-10T16:57:12.819+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 18 ms. Found 6 JPA repository interfaces.
+[2m2026-04-10T16:57:12.980+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat initialized with port 8081 (http)
+[2m2026-04-10T16:57:12.984+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardService  [0;39m [2m:[0;39m Starting service [Tomcat]
+[2m2026-04-10T16:57:12.984+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardEngine   [0;39m [2m:[0;39m Starting Servlet engine: [Apache Tomcat/10.1.18]
+[2m2026-04-10T16:57:13.001+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring embedded WebApplicationContext
+[2m2026-04-10T16:57:13.001+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mw.s.c.ServletWebServerApplicationContext[0;39m [2m:[0;39m Root WebApplicationContext: initialization completed in 410 ms
+[2m2026-04-10T16:57:13.010+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Starting...
+[2m2026-04-10T16:57:13.073+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:testdb user=SA
+[2m2026-04-10T16:57:13.074+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Start completed.
+[2m2026-04-10T16:57:13.078+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.b.a.h2.H2ConsoleAutoConfiguration   [0;39m [2m:[0;39m H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:testdb'
+[2m2026-04-10T16:57:13.118+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.hibernate.jpa.internal.util.LogHelper [0;39m [2m:[0;39m HHH000204: Processing PersistenceUnitInfo [name: default]
+[2m2026-04-10T16:57:13.134+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36morg.hibernate.Version                   [0;39m [2m:[0;39m HHH000412: Hibernate ORM core version 6.4.1.Final
+[2m2026-04-10T16:57:13.142+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.h.c.internal.RegionFactoryInitiator   [0;39m [2m:[0;39m HHH000026: Second-level cache disabled
+[2m2026-04-10T16:57:13.202+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.o.j.p.SpringPersistenceUnitInfo     [0;39m [2m:[0;39m No LoadTimeWeaver setup: ignoring JPA class transformer
+[2m2026-04-10T16:57:13.215+09:00[0;39m [33m WARN[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36morg.hibernate.orm.deprecation           [0;39m [2m:[0;39m HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+[2m2026-04-10T16:57:13.461+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.h.e.t.j.p.i.JtaPlatformInitiator      [0;39m [2m:[0;39m HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    drop table if exists floors cascade 
+Hibernate: 
+    drop table if exists organizations cascade 
+Hibernate: 
+    drop table if exists seat_reservations cascade 
+Hibernate: 
+    drop table if exists seats cascade 
+Hibernate: 
+    drop table if exists space_assignments cascade 
+Hibernate: 
+    drop table if exists users cascade 
+Hibernate: 
+    create table floors (
+        id integer generated by default as identity,
+        created_at timestamp(6) with time zone,
+        layout_data TEXT,
+        map_image_url varchar(255),
+        name varchar(255) not null,
+        primary key (id)
+    )
+Hibernate: 
+    create table organizations (
+        is_executive_unit boolean,
+        level integer not null,
+        created_at timestamp(6) with time zone,
+        id bigint generated by default as identity,
+        parent_id bigint,
+        name varchar(255) not null,
+        primary key (id)
+    )
+Hibernate: 
+    create table seat_reservations (
+        id bigint generated by default as identity,
+        reserved_at timestamp(6) with time zone,
+        seat_id bigint unique,
+        user_id bigint unique,
+        primary key (id)
+    )
+Hibernate: 
+    create table seats (
+        floor_id integer,
+        is_executive_seat boolean,
+        x_pos float(53) not null,
+        y_pos float(53) not null,
+        id bigint generated by default as identity,
+        seat_number varchar(255) not null,
+        section_name varchar(255),
+        primary key (id)
+    )
+Hibernate: 
+    create table space_assignments (
+        floor_id integer,
+        created_at timestamp(6) with time zone,
+        id bigint generated by default as identity,
+        org_id bigint,
+        area_polygon varchar(255),
+        primary key (id)
+    )
+Hibernate: 
+    create table users (
+        created_at timestamp(6) with time zone,
+        id bigint generated by default as identity,
+        org_id bigint,
+        email varchar(255) unique,
+        employee_id varchar(255),
+        name varchar(255) not null,
+        role varchar(255) not null,
+        primary key (id)
+    )
+Hibernate: 
+    alter table if exists organizations 
+       add constraint FKgsay2unfbsax6k1ulw0k557o7 
+       foreign key (parent_id) 
+       references organizations
+Hibernate: 
+    alter table if exists seat_reservations 
+       add constraint FKhg5s84m2jejuvogxfqyyqxhw7 
+       foreign key (seat_id) 
+       references seats
+Hibernate: 
+    alter table if exists seat_reservations 
+       add constraint FKmomew4txn1r80s417wa8sf4jn 
+       foreign key (user_id) 
+       references users
+Hibernate: 
+    alter table if exists seats 
+       add constraint FKa2enju2i4lyj3keq60omydtha 
+       foreign key (floor_id) 
+       references floors
+Hibernate: 
+    alter table if exists space_assignments 
+       add constraint FKssbi8aasbru8lgywfc26wu5go 
+       foreign key (floor_id) 
+       references floors
+Hibernate: 
+    alter table if exists space_assignments 
+       add constraint FK6jy2un31sanel67oxb51y3e2i 
+       foreign key (org_id) 
+       references organizations
+Hibernate: 
+    alter table if exists users 
+       add constraint FK902wn47cndp7hjhfvvb48brg 
+       foreign key (org_id) 
+       references organizations
+[2m2026-04-10T16:57:13.484+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Initialized JPA EntityManagerFactory for persistence unit 'default'
+[2m2026-04-10T16:57:13.729+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.d.j.r.query.QueryEnhancerFactory    [0;39m [2m:[0;39m Hibernate is in classpath; If applicable, HQL parser will be used.
+[2m2026-04-10T16:57:13.879+09:00[0;39m [33m WARN[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mJpaBaseConfiguration$JpaWebConfiguration[0;39m [2m:[0;39m spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[2m2026-04-10T16:57:13.884+09:00[0;39m [33m WARN[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36m.s.s.UserDetailsServiceAutoConfiguration[0;39m [2m:[0;39m 
+
+Using generated security password: 4fd420b1-b139-46f5-b6c6-936108e80038
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+[2m2026-04-10T16:57:13.964+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.s.web.DefaultSecurityFilterChain    [0;39m [2m:[0;39m Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@33e80a27, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@7649d350, org.springframework.security.web.context.SecurityContextHolderFilter@6915b614, org.springframework.security.web.header.HeaderWriterFilter@2b6d9650, org.springframework.web.filter.CorsFilter@37e7e089, org.springframework.security.web.authentication.logout.LogoutFilter@7937f96e, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@314b0d53, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4676fcd9, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@58f05266, org.springframework.security.web.access.ExceptionTranslationFilter@5d87c8af, org.springframework.security.web.access.intercept.AuthorizationFilter@b7952d2]
+[2m2026-04-10T16:57:14.019+09:00[0;39m [33m WARN[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mConfigServletWebServerApplicationContext[0;39m [2m:[0;39m Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+[2m2026-04-10T16:57:14.020+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Closing JPA EntityManagerFactory for persistence unit 'default'
+[2m2026-04-10T16:57:14.021+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Shutdown initiated...
+[2m2026-04-10T16:57:14.022+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Shutdown completed.
+[2m2026-04-10T16:57:14.026+09:00[0;39m [32m INFO[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36m.s.b.a.l.ConditionEvaluationReportLogger[0;39m [2m:[0;39m 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[2m2026-04-10T16:57:14.030+09:00[0;39m [31mERROR[0;39m [35m27998[0;39m [2m---[0;39m [2m[           main][0;39m [2m[0;39m[36mo.s.b.d.LoggingFailureAnalysisReporter  [0;39m [2m:[0;39m 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8081 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8081 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.136 s
+[INFO] Finished at: 2026-04-10T16:57:14+09:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.2:run (default-cli) on project backend: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

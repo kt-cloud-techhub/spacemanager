@@ -19,4 +19,10 @@ class OrganizationController(
 
     @PostMapping
     fun create(@RequestBody dto: OrganizationDto): OrganizationDto = orgService.createOrganization(dto)
+
+    @PutMapping("/{id}")
+    fun update(@PathVariable id: Long, @RequestBody dto: OrganizationDto): OrganizationDto = orgService.updateOrganization(id, dto)
+
+    @DeleteMapping("/{id}")
+    fun delete(@PathVariable id: Long) = orgService.deleteOrganization(id)
 }

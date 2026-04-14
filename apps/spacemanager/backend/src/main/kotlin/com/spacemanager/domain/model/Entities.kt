@@ -22,6 +22,9 @@ class Organization(
     @Column(name = "is_executive_unit")
     var isExecutiveUnit: Boolean = false,
 
+    @Column(name = "member_count")
+    var memberCount: Int = 0,
+
     @Column(name = "created_at")
     val createdAt: OffsetDateTime = OffsetDateTime.now()
 )
@@ -131,6 +134,12 @@ class SeatReservation(
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seat_id")
     var seat: Seat,
+
+    @Column(name = "team_name")
+    var teamName: String? = null,
+
+    @Column(name = "team_color")
+    var teamColor: String? = null,
 
     @Column(name = "reserved_at")
     val reserved_at: OffsetDateTime = OffsetDateTime.now()

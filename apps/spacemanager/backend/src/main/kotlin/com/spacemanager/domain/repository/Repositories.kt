@@ -14,6 +14,8 @@ interface OrganizationRepository : JpaRepository<Organization, Long> {
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
     fun countByOrganizationIdIn(orgIds: List<Long>): Long
+    fun countByOrganizationId(orgId: Long): Long
+    fun findByName(name: String): java.util.Optional<User>
 }
 
 @Repository
@@ -32,14 +34,21 @@ interface SpaceAssignmentRepository : JpaRepository<SpaceAssignment, Long>
 
 @Repository
 interface SeatReservationRepository : JpaRepository<SeatReservation, Long> {
+    fun findBySeatId(seatId: Long): java.util.Optional<SeatReservation>
     fun findBySeatFloorId(floorId: Int): List<SeatReservation>
-    @Modifying
+
+    @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional
     @org.springframework.data.jpa.repository.Query("DELETE FROM SeatReservation r WHERE r.user.id = :userId")
-    fun deleteByUserId(@org.springframework.data.repository.query.Param("userId") userId: Long)
+    fun deleteByUserId(userId: Long)
 
-    @Modifying
+    @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional
     @org.springframework.data.jpa.repository.Query("DELETE FROM SeatReservation r WHERE r.seat.id = :seatId")
-    fun deleteBySeatId(@org.springframework.data.repository.query.Param("seatId") seatId: Long)
+    fun deleteBySeatId(seatId: Long)
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Query("DELETE FROM SeatReservation r WHERE r.seat.floor.id = :floorId")
+    fun deleteBySeatFloorId(floorId: Int)
 }

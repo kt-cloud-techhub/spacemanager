@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, RotateCcw, MousePointer2, CheckCircle2 } from 'lucide-react';
+import { X, Save, RotateCcw, MousePointer2 } from 'lucide-react';
 import { fetchOrganizationTree } from '../../api/api';
 import type { OrganizationTree } from '../../api/api';
 

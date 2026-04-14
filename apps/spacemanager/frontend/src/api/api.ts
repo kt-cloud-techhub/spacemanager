@@ -4,18 +4,18 @@ const api = axios.create({
   baseURL: 'http://localhost:8081/api',
 });
 
-export interface Floor {
+export type Floor = {
   id: number;
   name: string;
   mapImageUrl: string;
   layoutData?: string;
-}
+};
 
-export interface Organization {
+export type Organization = {
   id: number;
   name: string;
   level: number;
-}
+};
 
 export interface Seat {
   id: number;
@@ -30,23 +30,25 @@ export interface Seat {
   teamColor?: string;
 }
 
-export interface OrganizationTree {
+export type OrganizationTree = {
   id: number;
   name: string;
   level: number;
+  parentId?: number | null;
   isExecutiveUnit: boolean;
   memberCount: number;
+  directMemberCount: number;
   children: OrganizationTree[];
-}
+};
 
-export interface SpaceAssignment {
+export type SpaceAssignment = {
   id: number;
   floorId: number;
   orgId: number;
   orgName: string;
   areaPolygon: string;
   color: string;
-}
+};
 
 export const fetchFloors = async (): Promise<Floor[]> => {
   const response = await api.get('/floors');
@@ -109,6 +111,52 @@ export const fetchOrganizations = async (): Promise<Organization[]> => {
 
 export const reserveSeat = async (seatId: number, userId: number) => {
   return await api.post(`/seats/${seatId}/reserve?userId=${userId}`);
+};
+
+export const deleteOrganization = async (id: number): Promise<void> => {
+  await api.delete(`/organizations/${id}`);
+};
+
+export type OrganizationDto = {
+  id?: number;
+  name: string;
+  level: number;
+  parentId?: number | null;
+  isExecutiveUnit: boolean;
+  memberCount: number;
+};
+
+export const createOrganization = async (dto: OrganizationDto): Promise<OrganizationDto> => {
+  const response = await api.post('/organizations', dto);
+  return response.data;
+};
+
+export const updateOrganization = async (id: number, dto: OrganizationDto): Promise<OrganizationDto> => {
+  const response = await api.put(`/organizations/${id}`, dto);
+  return response.data;
+};
+
+export interface BulkAssignRequest {
+  teams: string[];
+  teamColors: string[];
+  memberNames: string[];
+  seatIds: number[];
+}
+
+export const bulkAssignSeats = async (request: BulkAssignRequest): Promise<void> => {
+  await api.post('/seats/bulk-assign', request);
+};
+
+export const moveSeat = async (fromSeatId: number, toSeatId: number): Promise<void> => {
+  await api.post('/seats/move', { fromSeatId, toSeatId });
+};
+
+export const clearFloorReservations = async (floorId: number): Promise<void> => {
+  await api.delete(`/seats/floor/${floorId}`);
+};
+
+export const cancelSeatReservation = async (seatId: number): Promise<void> => {
+  await api.delete(`/seats/reservations/seat/${seatId}`);
 };
 
 export default api;

@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Users, Building2, Briefcase, Plus, Search, Filter } from 'lucide-react';
-import { fetchOrganizationTree, uploadBulkData } from '../../api/api';
-import type { OrganizationTree } from '../../api/api';
+import React, { useState } from 'react';
+import { ChevronRight, ChevronDown, Users, Building2, Briefcase, Plus, Search, Edit2, Trash2 } from 'lucide-react';
+import { fetchOrganizationTree, uploadBulkData, createOrganization, updateOrganization, deleteOrganization } from '../../api/api';
+import type { OrganizationTree, OrganizationDto } from '../../api/api';
+import OrgEditModal from './OrgEditModal';
 
-const TreeItem: React.FC<{ item: OrganizationTree; level: number }> = ({ item, level }) => {
-  const [isExpanded, setIsExpanded] = useState(level < 2); // Expand root and division by default
+const TreeItem: React.FC<{ 
+  item: OrganizationTree; 
+  level: number; 
+  onEdit: (item: OrganizationTree) => void;
+  onDelete: (item: OrganizationTree) => void;
+  onAddChild: (item: OrganizationTree) => void;
+}> = ({ item, level, onEdit, onDelete, onAddChild }) => {
+  const [isExpanded, setIsExpanded] = useState(level < 2);
   const hasChildren = item.children && item.children.length > 0;
 
   return (
@@ -45,6 +52,28 @@ const TreeItem: React.FC<{ item: OrganizationTree; level: number }> = ({ item, l
         </span>
 
         <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onAddChild(item); }}
+            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+            title="하위 부서 추가"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-white rounded-lg transition-all"
+            title="수정"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDelete(item); }}
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all"
+            title="삭제"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <div className="h-4 w-px bg-slate-200 mx-1" />
           <span className="text-[10px] font-black text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100">
             {item.memberCount} 명
           </span>
@@ -54,7 +83,14 @@ const TreeItem: React.FC<{ item: OrganizationTree; level: number }> = ({ item, l
       {isExpanded && hasChildren && (
         <div className="mt-1">
           {item.children.map(child => (
-            <TreeItem key={child.id} item={child} level={level + 1} />
+            <TreeItem 
+              key={child.id} 
+              item={child} 
+              level={level + 1} 
+              onEdit={onEdit} 
+              onDelete={onDelete} 
+              onAddChild={onAddChild} 
+            />
           ))}
         </div>
       )}
@@ -67,6 +103,10 @@ const OrganizationView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationTree | null>(null);
+  const [parentOrg, setParentOrg] = useState<OrganizationTree | null>(null);
+  
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const loadTree = async () => {
@@ -81,7 +121,7 @@ const OrganizationView: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadTree();
   }, []);
 
@@ -94,7 +134,7 @@ const OrganizationView: React.FC = () => {
       const result = await uploadBulkData(file);
       if (result.status === 'Success') {
         alert(`업로드 성공! 조직 ${result.orgsCreated}개, 인원 ${result.usersImported}명이 등록되었습니다.`);
-        loadTree(); // Refresh tree
+        loadTree();
       } else {
         alert(`업로드 실패: ${result.message}`);
       }
@@ -107,10 +147,47 @@ const OrganizationView: React.FC = () => {
     }
   };
 
+  const handleSaveOrg = async (dto: OrganizationDto) => {
+    if (modalMode === 'create') {
+      await createOrganization(dto);
+    } else if (modalMode === 'edit' && selectedOrg) {
+      await updateOrganization(selectedOrg.id, dto);
+    }
+    loadTree();
+    setModalMode(null);
+  };
+
+  const handleDeleteOrg = async (item: OrganizationTree) => {
+    if (window.confirm(`${item.name} 부서를 삭제하시겠습니까?\n(하위 부서나 소속 인원이 있으면 삭제되지 않습니다.)`)) {
+      try {
+        await deleteOrganization(item.id);
+        loadTree();
+      } catch (err: any) {
+        alert(err.response?.data?.message || '삭제에 실패했습니다.');
+      }
+    }
+  };
+
+  const filteredTree = React.useMemo(() => {
+    if (!searchTerm) return treeData;
+    const search = searchTerm.toLowerCase();
+    
+    const filterNode = (node: OrganizationTree): OrganizationTree | null => {
+      const match = node.name.toLowerCase().includes(search);
+      const filteredChildren = node.children ? node.children.map(filterNode).filter(n => n !== null) as OrganizationTree[] : [];
+      
+      if (match || filteredChildren.length > 0) {
+        return { ...node, children: filteredChildren };
+      }
+      return null;
+    };
+    
+    return treeData.map(filterNode).filter(n => n !== null) as OrganizationTree[];
+  }, [treeData, searchTerm]);
+
   return (
     <div className="h-full flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-12 gap-8">
-        {/* Left: Tree Control */}
         <div className="col-span-12 lg:col-span-8 space-y-6">
           <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 p-10">
             <div className="flex items-center justify-between mb-10">
@@ -129,7 +206,10 @@ const OrganizationView: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <button className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700">
+                <button 
+                  onClick={() => { setModalMode('create'); setSelectedOrg(null); setParentOrg(null); }}
+                  className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all hover:scale-105"
+                >
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -142,15 +222,21 @@ const OrganizationView: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4 max-h-[600px] overflow-auto pr-4 custom-scrollbar">
-                {treeData.map(root => (
-                  <TreeItem key={root.id} item={root} level={0} />
+                {filteredTree.map(root => (
+                  <TreeItem 
+                    key={root.id} 
+                    item={root} 
+                    level={0} 
+                    onEdit={(item) => { setModalMode('edit'); setSelectedOrg(item); setParentOrg(null); }}
+                    onDelete={handleDeleteOrg}
+                    onAddChild={(item) => { setModalMode('create'); setSelectedOrg(null); setParentOrg(item); }}
+                  />
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* Right: Summary Info */}
         <div className="col-span-12 lg:col-span-4 space-y-8">
           <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-indigo-100">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-6">Org Statistics</h4>
@@ -187,17 +273,18 @@ const OrganizationView: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl">
-             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center">
-               <Filter className="w-3 h-3 mr-2" /> Recent Changes
-             </h4>
-             <div className="space-y-4 opacity-50 grayscale italic">
-                <p className="text-sm font-bold text-slate-300">최근 업데이트 내역이 없습니다.</p>
-             </div>
-          </div>
         </div>
       </div>
+
+      {modalMode && (
+        <OrgEditModal 
+          initialData={selectedOrg}
+          parentOrg={parentOrg}
+          allOrgs={treeData}
+          onSave={handleSaveOrg}
+          onClose={() => setModalMode(null)}
+        />
+      )}
     </div>
   );
 };

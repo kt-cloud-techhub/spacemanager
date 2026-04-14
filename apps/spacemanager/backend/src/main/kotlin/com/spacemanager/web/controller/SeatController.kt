@@ -21,4 +21,36 @@ class SeatController(
     fun reserve(@PathVariable seatId: Long, @RequestParam userId: Long) {
         seatService.reserveSeat(userId, seatId)
     }
+
+    @PostMapping("/bulk-assign")
+    fun bulkAssign(@RequestBody request: BulkAssignRequest) {
+        seatService.bulkAssignSeats(request.teams, request.teamColors, request.memberNames, request.seatIds)
+    }
+
+    @PostMapping("/move")
+    fun moveSeat(@RequestBody request: MoveSeatRequest) {
+        seatService.moveSeat(request.fromSeatId, request.toSeatId)
+    }
+
+    @DeleteMapping("/floor/{floorId}")
+    fun clearFloor(@PathVariable floorId: Int) {
+        seatService.clearFloorReservations(floorId)
+    }
+
+    @DeleteMapping("/reservations/seat/{seatId}")
+    fun deleteReservation(@PathVariable seatId: Long) {
+        seatService.cancelReservation(seatId)
+    }
 }
+
+data class BulkAssignRequest(
+    val teams: List<String>,
+    val teamColors: List<String>,
+    val memberNames: List<String>,
+    val seatIds: List<Long>
+)
+
+data class MoveSeatRequest(
+    val fromSeatId: Long,
+    val toSeatId: Long
+)

@@ -44,17 +44,31 @@ class SimulationEngine(
         teams.forEach { teamId ->
             val teamMembers = orgs[teamId]?.filter { it.role != "Executive" } ?: emptyList()
             if (teamMembers.isNotEmpty()) {
-                // Find a "Seed" for this team (e.g. nearest to their parent)
-                val seedSeat = availableSeats.firstOrNull() // Simplified seed
+                // Find a "Seed" for this team (e.g. nearest to their leader or parent org location)
+                val parentOrgId = teamMembers.first().organization?.parent?.id
+                val parentLoc = if (parentOrgId != null) {
+                    val leaderInParent = users.find { it.organization?.id == parentOrgId && it.role == "Executive" }
+                    leaderInParent?.id?.let { result[it] }?.let { seatId -> seats.find { it.id == seatId } }
+                } else null
+                
+                val seedSeat = parentLoc ?: availableSeats.firstOrNull()
                 
                 if (seedSeat != null) {
                     teamMembers.forEach { member ->
-                        // Try to find the nearest seat to the seed or current seat (stability)
                         val currentSeatId = currentAssignments[member.id]
-                        val targetSeat = if (stabilityWeight > 0.8 && currentSeatId != null) {
-                             availableSeats.find { it.id == currentSeatId } ?: findNearest(seedSeat, availableSeats)
-                        } else {
-                             findNearest(seedSeat, availableSeats)
+                        val currentSeat = currentSeatId?.let { id -> seats.find { it.id == id } }
+                        
+                        // Calculate score for each available seat
+                        // lower is better
+                        val targetSeat = availableSeats.minByOrNull { seat ->
+                            val distToSeed = distance(Point(seedSeat.xPos, seedSeat.yPos), Point(seat.xPos, seat.yPos))
+                            val proximityScore = distToSeed * (proximityWeight / 100.0)
+                            
+                            val stabilityScore = if (currentSeat != null) {
+                                distance(Point(currentSeat.xPos, currentSeat.yPos), Point(seat.xPos, seat.yPos)) * (stabilityWeight / 100.0)
+                            } else 0.0
+                            
+                            proximityScore + stabilityScore
                         }
 
                         if (targetSeat != null) {

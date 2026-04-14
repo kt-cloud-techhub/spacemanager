@@ -14,7 +14,8 @@ class DataInitializer(
     private val seatRepository: SeatRepository,
     private val orgRepository: OrganizationRepository,
     private val userRepository: UserRepository,
-    private val spaceAssignmentRepository: SpaceAssignmentRepository
+    private val spaceAssignmentRepository: SpaceAssignmentRepository,
+    private val seatReservationRepository: SeatReservationRepository
 ) {
     private val logger = LoggerFactory.getLogger(DataInitializer::class.java)
 
@@ -24,6 +25,10 @@ class DataInitializer(
         logger.info("Initializing SpaceManager data for floors 4F, 7F, 15F and Team Areas...")
         
         try {
+            // --- Global Initialization (V10.7.2) ---
+            logger.info("Clearing existing reservations to ensure clean seeding...")
+            seatReservationRepository.deleteAll()
+
             // 1. Floors
             val floor4 = floorRepository.findByName("4F") ?: floorRepository.save(Floor(name = "4F", mapImageUrl = "/src/assets/floor_4f.png"))
             
@@ -68,109 +73,187 @@ class DataInitializer(
             
             val floor15 = floorRepository.findByName("15F") ?: floorRepository.save(Floor(name = "15F", mapImageUrl = "/src/assets/floor_15f.png"))
 
-            // 2. Organizations & Users (Shared)
-            val cloudBiz = orgRepository.findByName("Cloud사업담당") ?: orgRepository.save(Organization(name = "Cloud사업담당", level = 1))
-            val cloudTeam = orgRepository.findByName("클라우드사업팀") ?: orgRepository.save(Organization(name = "클라우드사업팀", level = 2, parent = cloudBiz))
+            // 2. Organizations & Users (V18.1 Tech HQ Restructuring)
+            val techHQ = orgRepository.findByName("기술본부") ?: orgRepository.save(Organization(name = "기술본부", level = 0, memberCount = 1))
+            val platformDir = orgRepository.findByName("플랫폼담당") ?: orgRepository.save(Organization(name = "플랫폼담당", level = 1, parent = techHQ, memberCount = 1))
+            val coe = orgRepository.findByName("CoE") ?: orgRepository.save(Organization(name = "CoE", level = 1, parent = techHQ, memberCount = 1))
             
-            // 2.1 Team Areas (SpaceAssignments)
+            val teamsData = listOf(
+                Triple("기술전략팀", 7, platformDir),
+                Triple("Core플랫폼팀", 9, platformDir),
+                Triple("Foundation플랫폼팀", 19, platformDir),
+                Triple("Data플랫폼팀", 8, platformDir),
+                Triple("InfraOps개발팀", 7, platformDir)
+            )
+
+            val teamOrgs = teamsData.associate { (name, count, parent) ->
+                name to (orgRepository.findByName(name) ?: orgRepository.save(Organization(name = name, level = 2, parent = parent, memberCount = count)))
+            }
+
             if (spaceAssignmentRepository.count() == 0L) {
-                spaceAssignmentRepository.save(SpaceAssignment(
-                    floor = floor4, 
-                    organization = cloudTeam, 
-                    areaPolygon = "80,120;250,120;250,200;80,200"
-                ))
-            }
-            if (userRepository.count() == 0L) {
-                userRepository.save(User(employeeId = "EMP001", name = "홍팀장", role = "Manager", organization = cloudTeam))
-                userRepository.save(User(employeeId = "EMP101", name = "김매니저", role = "Member", organization = cloudTeam))
-                userRepository.save(User(employeeId = "EMP201", name = "이대리", role = "Member", organization = cloudTeam))
+                spaceAssignmentRepository.save(SpaceAssignment(floor = floor4, organization = teamOrgs["기술전략팀"]!!, areaPolygon = "80,120 250,120 250,200 80,200"))
             }
 
-            // 3. Seats for 4F
-            if (seatRepository.findByFloorId(floor4.id!!).isEmpty()) {
-                val seats = mutableListOf<Seat>()
-                for (i in 1..4) for (j in 1..2) {
-                    seats.add(Seat(
-                        floor = floor4, 
-                        seatNumber = "4.A${i}${j}", 
-                        xPos = (50 + i * 40).toDouble(), 
-                        yPos = (130 + j * 30).toDouble(), 
-                        isExecutiveSeat = false
-                    ))
+            // Create users for specific testing (V18.3: Main user is Shin Eun-jung)
+            val usersToCreate = listOf("신은정", "홍길동", "김기술", "이플랫폼")
+            usersToCreate.forEach { name ->
+                userRepository.findByName(name).orElseGet {
+                    userRepository.save(User(employeeId = "EMP_${Math.abs(name.hashCode())}", name = name, role = "Member", organization = teamOrgs["기술전략팀"]!!))
                 }
-                seats.add(Seat(floor = floor4, seatNumber = "4.EXEC1", xPos = 250.0, yPos = 80.0, isExecutiveSeat = true))
-                seatRepository.saveAll(seats)
             }
 
-            // 4. Seats for 7F (Precision Grid V3: 118 General + 4 Executive)
-            val existingSeats7 = seatRepository.findByFloorId(floor7.id!!)
-            if (existingSeats7.size != 122) { // Target 122
-                if (existingSeats7.isNotEmpty()) seatRepository.deleteAll(existingSeats7)
-                
-                val seats = mutableListOf<Seat>()
-                val execSeatInfo = mapOf(
-                    1 to "Cloud고객담당",
-                    9 to "운영담당",
-                    15 to "플랫폼담당",
-                    20 to "기술본부장실"
-                )
-                
-                for (col in 1..20) {
-                    val isExecCol = execSeatInfo.containsKey(col)
-                    val execName = execSeatInfo[col]
-                    
-                    // Column Constraints (Rows 1-8)
-                    // Pillars: 5, 8, 11, 14, 17 (1 row missing)
-                    // Pillar+Exec impact: 16 (Rows 1-3 only)
-                    // Exec Office (no pillar): 2, 10, 19 (Rows 1-4 only)
-                    
-                    val maxRow = when (col) {
-                        1, 9, 15, 20 -> 4 // Row 4 is Exec seat
-                        16 -> 3            // Pillar at Row 4, Exec office below
-                        2, 10, 19 -> 4   // Exec office below Row 4
-                        else -> 8
-                    }
-                    
-                    val pillarRow = when (col) {
-                        5, 8, 11, 14, 17 -> 2 // Pillar example at Row 2
-                        else -> -1
+            // --- V10.2 Precision Seeding Engine (Enhanced Parsing) ---
+            fun parseFloorAndSaveSeats(floor: Floor, filePath: String, floorPrefix: String) {
+                try {
+                    val file = java.io.File(filePath)
+                    if (!file.exists()) {
+                        logger.warn("!!! [V10.4] File NOT found at path: ${file.absolutePath}. Skipping seat seeding for ${floor.name}.")
+                        return
                     }
 
-                    for (row in 1..maxRow) {
-                        if (row == pillarRow) continue // Skip pillar
+                    logger.info("--- [V10.4] Starting Seeding for Floor ${floor.name} from ${file.name} ---")
+                    val totalLines = file.readLines().filter { it.contains("|") }
+                    if (totalLines.isEmpty()) {
+                        logger.warn("!!! [V10.4] No table lines found in: $filePath")
+                        return
+                    }
 
-                        val isExecSeat = (isExecCol && row == 4)
-                        val seatNum = if (isExecSeat) execName!! else "7.${col}.${row}"
-                        val section = if (isExecSeat) "임원실" else if (col <= 10) "워크존 상단" else "워크존 하단"
+                    // 데이터 행들만 추출 (구분선 '---' 제외)
+                    val allPotentialDataRows = totalLines.filter { !it.contains("---") }
+                    val headerLine = allPotentialDataRows.getOrNull(0) ?: ""
+                    // 헤더에 데이터(seat, 병합)가 있으면 첫 줄부터 데이터로 간주
+                    val isLine1Data = headerLine.contains("seat", ignoreCase = true) || headerLine.contains("병합")
+                    
+                    val dataRows = if (isLine1Data) allPotentialDataRows else allPotentialDataRows.drop(1)
+                    logger.info("-> Detected ${dataRows.size} data rows (isLine1Data=$isLine1Data)")
+
+                    val existingSeats = seatRepository.findByFloorId(floor.id!!)
+                    if (existingSeats.isNotEmpty()) {
+                        logger.info("Cleaning up ${existingSeats.size} existing seats and reservations for ${floor.name}")
+                        // 삭제 순서: Reservations -> Seats (FK 무결성 보장)
+                        existingSeats.forEach { seat ->
+                            seatReservationRepository.deleteBySeatId(seat.id!!)
+                        }
+                        seatRepository.deleteAll(existingSeats)
+                    }
+
+                    var seatCount = 0
+                    val processedMerges = mutableSetOf<String>()
+
+                    fun getColLabel(index: Int): String {
+                        var n = index
+                        val sb = StringBuilder()
+                        while (n >= 0) {
+                            sb.append(('A'.toInt() + (n % 26)).toChar())
+                            n = n / 26 - 1
+                        }
+                        return sb.reverse().toString()
+                    }
+
+                    dataRows.forEachIndexed { rIdx, line ->
+                        val rowNum = rIdx + 1
+                        val rawCells = line.trim().removePrefix("|").removeSuffix("|").split("|").map { it.trim() }
                         
-                        seats.add(Seat(
-                            floor = floor7,
-                            seatNumber = seatNum,
-                            sectionName = section,
-                            xPos = (100 + col * 40).toDouble(), // Grid layout coordinates
-                            yPos = (100 + row * 40).toDouble(),
-                            isExecutiveSeat = isExecSeat
-                        ))
+                        // 행 번호 컬럼 감지
+                        val firstCellRaw = rawCells.getOrNull(0) ?: ""
+                        val firstCellClean = firstCellRaw.replace("*", "").trim()
+                        val hasRowIndicator = firstCellClean.isNotEmpty() && firstCellClean.all { it.isDigit() } && rawCells.size > 20
+
+                        val seatsCells = if (hasRowIndicator) rawCells.drop(1) else rawCells
+                        // Removed fixed 26-column limit for V12.0
+                        
+                        seatsCells.forEachIndexed { cIdx, content ->
+                            val colLetter = getColLabel(cIdx)
+                            val seatNum = "$floorPrefix.$colLetter$rowNum"
+                            
+                            // 마크다운 서식 제거 후 비교 (e.g. **seat** -> seat)
+                            val cleanContent = content.replace("*", "").trim()
+                            val lowered = cleanContent.lowercase()
+                            
+                            val isExec = lowered.contains("임원") && lowered.contains("seat")
+                            val isSeat = (lowered == "seat" || lowered.contains("seat")) && !isExec
+                            
+                            val mergeMatch = Regex("\\(병합(\\d+)\\)").find(cleanContent)
+                            val mergeKey = mergeMatch?.groupValues?.get(1) ?: ""
+
+                            val savedSeat = if (isExec) {
+                                val uniqueMergeKey = "${floor.id}-$mergeKey"
+                                if (mergeKey.isEmpty() || !processedMerges.contains(uniqueMergeKey)) {
+                                    val seat = seatRepository.save(Seat(
+                                        floor = floor, seatNumber = seatNum, sectionName = "${floor.name}_EXEC",
+                                        xPos = ((cIdx + 1) * 32).toDouble(), yPos = (rowNum * 32).toDouble(),
+                                        isExecutiveSeat = true
+                                    ))
+                                    if (mergeKey.isNotEmpty()) processedMerges.add(uniqueMergeKey)
+                                    seatCount++
+                                    seat
+                                } else null
+                            } else if (isSeat) {
+                                val seat = seatRepository.save(Seat(
+                                    floor = floor, seatNumber = seatNum, sectionName = "${floor.name}_OPEN",
+                                    xPos = ((cIdx + 1) * 32).toDouble(), yPos = (rowNum * 32).toDouble(),
+                                    isExecutiveSeat = false
+                                ))
+                                seatCount++
+                                seat
+                            } else null
+
+                            // --- Personnel Deployment (V11.0 - Multi-Floor Mapping) ---
+                            savedSeat?.let { seat ->
+                                val occupantMapping = mapOf(
+                                    "15.A1" to "홍팀장",
+                                    "15.D3" to "김매니저",
+                                    "15.E3" to "이대리",
+                                    "15.F3" to "김주환",
+                                    "15.G3" to "김지웅",
+                                    "4.O14" to "조영진",
+                                    "4.P14" to "유지면"
+                                )
+                                occupantMapping[seat.seatNumber]?.let { name ->
+                                    val user = userRepository.findByName(name).orElse(null)
+                                    if (user != null) {
+                                        seatReservationRepository.save(SeatReservation(user = user, seat = seat))
+                                    }
+                                }
+                            }
+                        }
                     }
+                    logger.info("+++ [V11.0] Successfully seeded Floor ${floor.name}: $seatCount seats created & people assigned +++")
+                } catch (e: Exception) {
+                    logger.error("FAILED to seed Floor ${floor.name}: ${e.message}", e)
                 }
-                
-                seatRepository.saveAll(seats)
             }
 
-            // 5. Seats for 15F
-            if (seatRepository.findByFloorId(floor15.id!!).isEmpty()) {
-                val seats = mutableListOf<Seat>()
-                for (i in 1..3) for (j in 1..3) {
-                    seats.add(Seat(
-                        floor = floor15, 
-                        seatNumber = "15.E${i}${j}", 
-                        xPos = (150 + i * 50).toDouble(), 
-                        yPos = (300 + j * 40).toDouble(), 
-                        isExecutiveSeat = false
-                    ))
+            // --- Asset Directory Discovery (V11.0) ---
+            val possibleAssetDirs = listOf(
+                "../frontend/src/assets",
+                "apps/spacemanager/frontend/src/assets",
+                "/Users/study/spacemanager-anti/apps/spacemanager/frontend/src/assets"
+            )
+
+            var assetDir: java.io.File? = null
+            for (dirPath in possibleAssetDirs) {
+                val dir = java.io.File(dirPath)
+                if (dir.exists() && dir.isDirectory) {
+                    assetDir = dir
+                    break
                 }
-                seats.add(Seat(floor = floor15, seatNumber = "15.DIR1", xPos = 400.0, yPos = 100.0, isExecutiveSeat = true))
-                seatRepository.saveAll(seats)
+            }
+
+            if (assetDir != null) {
+                logger.info("+++ [V11.0] Unified Seeding Engine Started. Assets Found at: ${assetDir.absolutePath} +++")
+                
+                val floorsToSeed = listOf(
+                    Triple(floor4, java.io.File(assetDir, "4f.md").absolutePath, "4"),
+                    Triple(floor7, java.io.File(assetDir, "7f.md").absolutePath, "7"),
+                    Triple(floor15, java.io.File(assetDir, "15층.md").absolutePath, "15")
+                )
+
+                floorsToSeed.forEach { (floor, path, prefix) ->
+                    parseFloorAndSaveSeats(floor, path, prefix)
+                }
+            } else {
+                logger.error("COULD NOT FIND ASSET DIRECTORY! All seat seeding skipped.")
             }
             
             logger.info("Data initialization completed successfully.")
