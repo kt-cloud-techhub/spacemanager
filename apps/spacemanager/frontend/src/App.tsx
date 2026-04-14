@@ -104,8 +104,11 @@ function App() {
   };
 
   const handleSeatClick = (seat: Seat) => {
+    console.log("V18.14 SELECTOR TRIGGERED", seat?.id); // V18.14 Trace point
+    if (!seat) return; 
+
     if (isSelectingAnchor) {
-      if (seat.isExecutiveSeat) {
+      if (seat?.isExecutiveSeat) {
         setAnchorSeat(seat);
         setIsSelectingAnchor(false);
       } else {
@@ -114,12 +117,12 @@ function App() {
       return;
     }
 
-    if (movingSeat && seat.status === 'available') {
+    if (movingSeat && seat?.status === 'available') {
       handleMoveSeat(seat);
       return;
     }
 
-    if (seat.status === 'occupied') {
+    if (seat?.status === 'occupied') {
       setMovingSeat(seat);
     } else {
       setMovingSeat(null);
@@ -367,8 +370,8 @@ function App() {
                               {selectedSeat.status === 'occupied' ? (
                                 <div className="p-4 bg-indigo-500/30 border border-indigo-400/30 rounded-2xl">
                                   <div className="text-[10px] font-black text-indigo-200 uppercase mb-1 tracking-widest">Occupant</div>
-                                  <div className="text-lg font-black text-white">{selectedSeat.occupantName || 'Unknown'}</div>
-                                  <div className="text-[11px] font-bold text-indigo-200 opacity-80">{selectedSeat.teamName || 'Global Team'}</div>
+                                  <div className="text-lg font-black text-white">{selectedSeat?.occupantName || 'Unknown'}</div>
+                                  <div className="text-[11px] font-bold text-indigo-200 opacity-80">{selectedSeat?.teamName || 'Global Team'}</div>
                                 </div>
                               ) : (
                                 <button 

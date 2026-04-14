@@ -9,6 +9,7 @@ import com.spacemanager.domain.repository.SeatReservationRepository
 import com.spacemanager.domain.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.slf4j.LoggerFactory
 
 import com.spacemanager.web.dto.SeatDto
 
@@ -19,6 +20,7 @@ class SeatService(
     private val userRepository: UserRepository,
     private val orgRepository: OrganizationRepository
 ) {
+    private val logger = LoggerFactory.getLogger(SeatService::class.java)
 
     @Transactional(readOnly = true)
     fun getSeatsByFloor(floorId: Int): List<SeatDto> {
@@ -82,6 +84,12 @@ class SeatService(
 
             // 2. Find Seat
             val seat = seatRepository.findById(seatId).orElseThrow { RuntimeException("Seat $seatId not found") }
+            
+            // Guard: Don't assign regular members to executive seats
+            if (seat.isExecutiveSeat) {
+                logger.warn("Skipping assignment to executive seat: ${seat.seatNumber}")
+                return@forEachIndexed
+            }
 
             // 3. Clear existing reservation
             reservationRepository.deleteByUserId(user.id!!)
