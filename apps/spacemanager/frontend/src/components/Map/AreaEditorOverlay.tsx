@@ -8,10 +8,11 @@ interface AreaEditorOverlayProps {
   onCancel: () => void;
   currentPoints: number[];
   onReset: () => void;
+  onUndo: () => void;
 }
 
 const AreaEditorOverlay: React.FC<AreaEditorOverlayProps> = ({ 
-  onSave, onCancel, currentPoints, onReset 
+  onSave, onCancel, currentPoints, onReset, onUndo 
 }) => {
   const [orgs, setOrgs] = useState<OrganizationTree[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
@@ -61,11 +62,21 @@ const AreaEditorOverlay: React.FC<AreaEditorOverlayProps> = ({
           <div className="h-8 w-px bg-slate-700 mx-2" />
 
           <button 
-            onClick={onReset}
-            className="p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all"
-            title="초기화"
+            onClick={onUndo}
+            disabled={currentPoints.length === 0}
+            className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all ${currentPoints.length === 0 ? 'opacity-20 cursor-not-allowed' : ''}`}
+            title="마지막 포인트 취소 (Undo)"
           >
             <RotateCcw className="w-5 h-5" />
+          </button>
+
+          <button 
+            onClick={onReset}
+            disabled={currentPoints.length === 0}
+            className={`p-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl transition-all ${currentPoints.length === 0 ? 'opacity-20 cursor-not-allowed' : ''}`}
+            title="초기화"
+          >
+            <X className="w-5 h-5" />
           </button>
 
           <button 

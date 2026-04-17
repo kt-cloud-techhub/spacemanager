@@ -2,6 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Target, Users, Plus, Trash2, Send, X, Info } from 'lucide-react';
 import { bulkAssignSeats, clearFloorReservations, fetchOrganizationTree, type Seat, type OrganizationTree } from '../../api/api';
 
+interface User {
+  id: number;
+  name: string;
+  role?: string;
+}
+
 interface TeamInput {
   name: string;
   count: string;
@@ -43,7 +49,6 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
   const [orgTree, setOrgTree] = useState<OrganizationTree[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
-  // Load org tree on mount
   useEffect(() => {
     const loadOrgs = async () => {
       try {
@@ -59,7 +64,6 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
     loadOrgs();
   }, []);
 
-  // Utility to handle org data
   const flattenedOrgs = useMemo(() => {
     const list: { id: number, name: string, directMemberCount: number }[] = [];
     const traverse = (node: OrganizationTree) => {
@@ -70,7 +74,6 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
     return list;
   }, [orgTree]);
 
-  // Clean floor and reset local state
   const handleReset = async () => {
     if (window.confirm(`${currentFloor} Reset Map?`)) {
       try {
@@ -92,7 +95,7 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
     const updatedTeam = { ...newTeams[index], [field]: value };
     if (field === 'name') {
       const selectedOrg = flattenedOrgs.find(o => o.name === value);
-      if (selectedOrg && selectedOrg.directMemberCount !== undefined && selectedOrg.directMemberCount !== null) {
+      if (selectedOrg && selectedOrg.directMemberCount != null) {
         updatedTeam.count = selectedOrg.directMemberCount.toString();
       }
     }
@@ -118,64 +121,57 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
 
   const memberList = useMemo(() => teamData.flatMap(t => t.members), [teamData]);
 
-  // V18.14 Final Smart Placement Engine (Isolation & Row-First)
+  // V18.23 Helpers
+  const getCol = (seatNum: string) => {
+    const match = seatNum.match(/\.([A-Z]+)/);
+    return match ? match[1] : '';
+  };
+
+  const calculateScore = (seat: Seat, placedSeats: Seat[], seedSeat: Seat) => {
+    let score = 0;
+    const dxA = seat.xPos - seedSeat.xPos;
+    const dyA = seat.yPos - seedSeat.yPos;
+    score += Math.sqrt(dxA * dxA + dyA * dyA) * 10;
+
+    // V18.23: Absolute Column Priority
+    if (getCol(seat.seatNumber) === getCol(seedSeat.seatNumber)) {
+      score -= 10000;
+    }
+
+    // Team Gravity
+    placedSeats.forEach(ps => {
+      const dx = seat.xPos - ps.xPos;
+      const dy = seat.yPos - ps.yPos;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 150) {
+        score -= Math.max(0, 3000 - dist * 20);
+      }
+      if (getCol(seat.seatNumber) === getCol(ps.seatNumber)) {
+        score -= 2000;
+      }
+    });
+
+    if (Math.abs(seat.yPos - seedSeat.yPos) < 5) score -= 500;
+    return score;
+  };
+
   const recommendedSeats = useMemo(() => {
     if (!anchorSeat || teamData.length === 0) return [];
 
-    const availableSeats = [...seats.filter(s => 
-      s.status === 'available' && 
-      !s.isExecutiveSeat && 
-      !s.sectionName?.includes('EXEC')
-    )];
-    if (availableSeats.length === 0) return [];
-
-    const globalSelectedByAlgorithm: Seat[] = [];
-    const remainingPool = [...availableSeats];
+    const available = seats.filter(s => s.status === 'available' && !s.sectionName?.includes('EXEC'));
+    const globalSelected: Seat[] = [];
+    const pool = [...available];
 
     teamData.forEach(team => {
-      const currentTeamSelected: Seat[] = [];
-      
-      team.members.forEach((_, memberIdx) => {
-        if (remainingPool.length === 0) return;
-
+      const teamSelected: Seat[] = [];
+      team.members.forEach(() => {
+        if (pool.length === 0) return;
         let bestIdx = -1;
         let minScore = Infinity;
 
-        for (let j = 0; j < remainingPool.length; j++) {
-          const s = remainingPool[j];
-          
-          // 1. Proximity to Anchor Seat
-          const dxA = s.xPos - anchorSeat.xPos;
-          const dyA = s.yPos - anchorSeat.yPos;
-          const distA = Math.sqrt(dxA * dxA + dyA * dyA);
-
-          // 2. Intra-team Adjacency
-          let intraTeamBonus = 0;
-          for (const sameTeamSeat of currentTeamSelected) {
-            const dx = s.xPos - sameTeamSeat.xPos;
-            const dy = s.yPos - sameTeamSeat.yPos;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist <= 40) {
-              intraTeamBonus += 2000;
-              // Row-First Priority (Bonus for same row)
-              if (Math.abs(s.yPos - sameTeamSeat.yPos) < 5) intraTeamBonus += 300;
-            }
-          }
-
-          // 3. Isolation Strategy (For Seed Member)
-          let isolationPenalty = 0;
-          if (memberIdx === 0) {
-             const occupiedNow = seats.filter(os => os.status === 'occupied' || globalSelectedByAlgorithm.some(gs => gs.id === os.id));
-             occupiedNow.forEach(os => {
-               const dx = s.xPos - os.xPos;
-               const dy = s.yPos - os.yPos;
-               const dist = Math.sqrt(dx * dx + dy * dy);
-               if (dist <= 40) isolationPenalty += 5000;
-             });
-          }
-
-          // Final Scoring (Lower is better)
-          const score = (distA * 10) - intraTeamBonus + isolationPenalty;
+        for (let j = 0; j < pool.length; j++) {
+          const s = pool[j];
+          const score = calculateScore(s, teamSelected, anchorSeat);
           if (score < minScore) {
             minScore = score;
             bestIdx = j;
@@ -183,44 +179,45 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
         }
 
         if (bestIdx !== -1) {
-          const picked = remainingPool[bestIdx];
-          globalSelectedByAlgorithm.push(picked);
-          currentTeamSelected.push(picked);
-          remainingPool.splice(bestIdx, 1);
+          const picked = pool[bestIdx];
+          globalSelected.push(picked);
+          teamSelected.push(picked);
+          pool.splice(bestIdx, 1);
         }
       });
     });
 
-    return globalSelectedByAlgorithm;
+    return globalSelected;
   }, [anchorSeat, teamData, seats]);
 
   const handleApply = async () => {
-    if (!anchorSeat || recommendedSeats.length < memberList.length) {
-      alert('Criteria missing.');
-      return;
-    }
+    if (!anchorSeat || recommendedSeats.length === 0) return;
 
     try {
       const names: string[] = [];
       const colors: string[] = [];
+      const memberNames: string[] = [];
+
       teamData.forEach(t => {
-        t.members.forEach(() => {
+        t.members.forEach(m => {
           names.push(t.name);
           colors.push(t.color);
+          memberNames.push(m);
         });
       });
 
       await bulkAssignSeats({
         teams: names,
         teamColors: colors,
-        memberNames: memberList,
+        memberNames,
         seatIds: recommendedSeats.map(s => s.id)
       });
 
-      alert(`${memberList.length} Assigned!`);
+      alert('Successfully assigned!');
+      onClearAnchor();
       onSuccess();
     } catch (e) {
-      console.error('Bulk assignment error:', e);
+      console.error(e);
     }
   };
 
@@ -233,14 +230,18 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
           </h3>
           <p className="text-[11px] font-bold text-slate-400 leading-relaxed">Assigning members automatically.</p>
         </div>
-        <button onClick={handleReset} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm border border-slate-50"><Trash2 className="w-4 h-4" /></button>
+        <button onClick={handleReset} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all shadow-sm border border-slate-50">
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-2">
         {teams.map((team, idx) => (
           <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3 relative group transition-all hover:bg-white hover:shadow-md">
             {teams.length > 1 && (
-              <button onClick={() => removeTeam(idx)} className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => removeTeam(idx)} className="absolute top-2 right-2 p-1.5 text-slate-300 hover:text-rose-500 transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
             )}
             <div className="flex gap-2">
               <select value={team.name} onChange={(e) => updateTeam(idx, 'name', e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-indigo-500 transition-all cursor-pointer">
@@ -252,24 +253,53 @@ const SmartPlacementPanel: React.FC<SmartPlacementPanelProps> = ({
             <textarea placeholder="Direct list (CSV)" value={team.members} onChange={(e) => updateTeam(idx, 'members', e.target.value)} rows={2} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-medium outline-none focus:border-indigo-500 transition-all resize-none shadow-inner" />
           </div>
         ))}
-        <button onClick={addTeam} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-indigo-300 hover:text-indigo-400 transition-all flex items-center justify-center text-xs font-black"><Plus className="w-4 h-4 mr-2" /> Add Team</button>
+        <button onClick={addTeam} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-indigo-300 hover:text-indigo-400 transition-all flex items-center justify-center text-xs font-black">
+          <Plus className="w-4 h-4 mr-2" /> Add Team
+        </button>
       </div>
 
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <div className={`p-4 rounded-2xl border transition-all ${isSelectingAnchor ? 'bg-indigo-50 border-indigo-200 shadow-inner' : 'bg-slate-50 border-slate-200'}`}>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center"><Target className="w-3.5 h-3.5 mr-2" /> Anchor Seat</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center">
+              <Target className="w-3.5 h-3.5 mr-2" /> Anchor Seat
+            </span>
             {anchorSeat && <button onClick={onClearAnchor} className="text-slate-400 hover:text-rose-500 transition-colors"><X className="w-4 h-4" /></button>}
           </div>
-          {anchorSeat ? <div className="text-sm font-black text-indigo-700 animate-in fade-in transition-all">{anchorSeat.seatNumber} Selected</div> : <button onClick={() => onSelectAnchorMode(!isSelectingAnchor)} className={`w-full py-2.5 rounded-xl text-xs font-black transition-all shadow-sm ${isSelectingAnchor ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>{isSelectingAnchor ? 'Click Map' : 'Select Anchor'}</button>}
+          {anchorSeat ? (
+            <div className="text-sm font-black text-indigo-700 animate-in fade-in transition-all">
+              {anchorSeat.seatNumber} Selected
+            </div>
+          ) : (
+            <button onClick={() => onSelectAnchorMode(!isSelectingAnchor)} className={`w-full py-2.5 rounded-xl text-xs font-black transition-all shadow-sm ${isSelectingAnchor ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
+              {isSelectingAnchor ? 'Click Map' : 'Select Anchor'}
+            </button>
+          )}
         </div>
+        
         {recommendedSeats.length > 0 && (
-          <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-start animate-in slide-in-from-bottom-2 transition-all">
-            <Info className="w-4 h-4 text-indigo-400 mr-2 mt-0.5" />
-            <span className="text-[10px] font-bold text-indigo-700"><strong>{recommendedSeats.length} members</strong> highlighted.</span>
+          <div className="space-y-2">
+            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-start animate-in slide-in-from-bottom-2 transition-all">
+              <Info className="w-4 h-4 text-indigo-400 mr-2 mt-0.5" />
+              <span className="text-[10px] font-bold text-indigo-700"><strong>{recommendedSeats.length} members</strong> highlighted.</span>
+            </div>
+            
+            <button 
+              onClick={onClearAnchor} 
+              className="w-full py-2.5 bg-rose-50 text-rose-500 text-[11px] font-bold rounded-xl hover:bg-rose-100 transition-all border border-rose-100 flex items-center justify-center"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> 배치 제안 초기화 (취소)
+            </button>
           </div>
         )}
-        <button onClick={handleApply} disabled={!anchorSeat || memberList.length === 0} className={`w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center space-x-2 shadow-lg ${!anchorSeat || memberList.length === 0 ? 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}><Send className="w-4 h-4" /> <span>Bulk Apply</span></button>
+
+        <button 
+          onClick={handleApply} 
+          disabled={!anchorSeat || memberList.length === 0} 
+          className={`w-full py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center space-x-2 shadow-lg ${!anchorSeat || memberList.length === 0 ? 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+        >
+          <Send className="w-4 h-4" /> <span>Bulk Apply</span>
+        </button>
       </div>
     </div>
   );

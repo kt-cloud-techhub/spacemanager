@@ -16,6 +16,7 @@ interface UserRepository : JpaRepository<User, Long> {
     fun countByOrganizationIdIn(orgIds: List<Long>): Long
     fun countByOrganizationId(orgId: Long): Long
     fun findByName(name: String): java.util.Optional<User>
+    fun findByEmployeeId(employeeId: String): java.util.Optional<User>
 }
 
 @Repository
@@ -27,6 +28,7 @@ interface FloorRepository : JpaRepository<Floor, Int> {
 interface SeatRepository : JpaRepository<Seat, Long> {
     fun findByFloorId(floorId: Int): List<Seat>
     fun findByFloorIdIn(floorIds: List<Int>): List<Seat>
+    fun findBySeatNumber(seatNumber: String): Seat?
 }
 
 @Repository

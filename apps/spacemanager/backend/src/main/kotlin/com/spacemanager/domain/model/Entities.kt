@@ -23,7 +23,7 @@ class Organization(
     var isExecutiveUnit: Boolean = false,
 
     @Column(name = "member_count")
-    var memberCount: Int = 0,
+    var memberCount: Int? = 0,
 
     @Column(name = "created_at")
     val createdAt: OffsetDateTime = OffsetDateTime.now()
@@ -46,7 +46,7 @@ class User(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "org_id")
-    var organization: Organization,
+    var organization: Organization? = null,
 
     @Column(unique = true)
     var email: String? = null,

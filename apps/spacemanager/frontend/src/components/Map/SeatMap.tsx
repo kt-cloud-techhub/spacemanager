@@ -12,11 +12,12 @@ interface SeatMapProps {
   isEditMode?: boolean;
   highlightedSeatIds?: number[]; // V14.1
   isSelectingAnchor?: boolean;   // V14.1
+  activePoints?: number[];       // V18.20 Active Draw Preview
 }
 
 const SeatMap: React.FC<SeatMapProps> = ({ 
   floorAsset, seats, onSeatSelect, selectedSeatId, assignments = [], onMapClick, isEditMode,
-  highlightedSeatIds = [], isSelectingAnchor = false
+  highlightedSeatIds = [], isSelectingAnchor = false, activePoints = []
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1.0);
@@ -229,8 +230,7 @@ const SeatMap: React.FC<SeatMapProps> = ({
         '1-27': { colSpan: 2, rowSpan: 1, label: '라운지', theme: 'bg-emerald-50 border-emerald-100 text-emerald-800' },
         '1-29': { colSpan: 3, rowSpan: 1, label: 'OA존', theme: 'bg-blue-50 border-blue-100 text-blue-700' },
         '1-33': { colSpan: 1, rowSpan: 3, label: '감사실', theme: 'bg-amber-50 border-amber-200 text-amber-900' },
-        '8-1': { colSpan: 2, rowSpan: 4, label: '임원Seat(1)', type: 'exec', theme: 'bg-slate-800 border-slate-900 text-white' },
-        '8-13': { colSpan: 3, rowSpan: 4, label: '임원Seat(2)', type: 'exec', theme: 'bg-slate-800 border-slate-900 text-white' },
+        '8-1': { colSpan: 3, rowSpan: 4, label: '임원Seat(1)', type: 'exec', theme: 'bg-slate-800 border-slate-900 text-white' },
         '8-25': { colSpan: 2, rowSpan: 4, label: '임원Seat(3)', type: 'exec', theme: 'bg-slate-800 border-slate-900 text-white' },
         '5-33': { colSpan: 1, rowSpan: 4, label: '임원Seat(4)', type: 'exec', theme: 'bg-slate-800 border-slate-900 text-white' }
       };
@@ -346,28 +346,52 @@ const SeatMap: React.FC<SeatMapProps> = ({
         >
           {/* SVG Layer for Polygons */}
           <svg className="absolute inset-0 pointer-events-none z-10 w-full h-full min-h-[1000px] min-w-[1500px]">
-            {assignments.map(asg => (
-              <g key={asg.id}>
-                <polygon 
-                  points={asg.areaPolygon} 
-                  fill={asg.color || '#6366f1'} 
-                  fillOpacity="0.1" 
-                  stroke={asg.color || '#6366f1'} 
-                  strokeWidth="2" 
-                  strokeDasharray="4 4"
+            {/* Active Drawing Preview */}
+            {isEditMode && activePoints.length >= 2 && (
+              <g>
+                <polyline
+                  points={(() => {
+                    const pairs = [];
+                    for (let i = 0; i < activePoints.length; i += 2) {
+                      pairs.push(`${activePoints[i]},${activePoints[i+1]}`);
+                    }
+                    return pairs.join(' ');
+                  })()}
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="3"
+                  strokeDasharray="6 4"
+                  className="drop-shadow-sm"
                 />
-                {asg.areaPolygon.split(/[\s,]+/).length >= 2 && (
-                  <text 
-                    x={asg.areaPolygon.split(/[\s,]+/)[0]} 
-                    y={asg.areaPolygon.split(/[\s,]+/)[1]} 
-                    className="text-[10px] font-black fill-slate-400"
-                    dy="-10"
-                  >
-                    {asg.orgName}
-                  </text>
+                {/* Closed polygon preview if 3+ points */}
+                {activePoints.length >= 6 && (
+                  <polygon
+                    points={(() => {
+                      const pairs = [];
+                      for (let i = 0; i < activePoints.length; i += 2) {
+                        pairs.push(`${activePoints[i]},${activePoints[i+1]}`);
+                      }
+                      return pairs.join(' ');
+                    })()}
+                    fill="#ef4444"
+                    fillOpacity="0.1"
+                  />
                 )}
+                {/* Points markers */}
+                {Array.from({ length: activePoints.length / 2 }).map((_, i) => (
+                  <circle
+                    key={i}
+                    cx={activePoints[i*2]}
+                    cy={activePoints[i*2+1]}
+                    r="4"
+                    fill="#ef4444"
+                    stroke="white"
+                    strokeWidth="2"
+                    className="animate-pulse"
+                  />
+                ))}
               </g>
-            ))}
+            )}
           </svg>
           {renderGridView()}
         </div>

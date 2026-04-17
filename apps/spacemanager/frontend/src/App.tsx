@@ -104,8 +104,12 @@ function App() {
   };
 
   const handleSeatClick = (seat: Seat) => {
-    console.log("V18.14 SELECTOR TRIGGERED", seat?.id); // V18.14 Trace point
-    if (!seat) return; 
+    if (!seat) return;
+    
+    if (isEditMode) {
+      handleSeatMapClick(seat.xPos, seat.yPos);
+      return;
+    }
 
     if (isSelectingAnchor) {
       if (seat?.isExecutiveSeat) {
@@ -166,6 +170,10 @@ function App() {
     if (isEditMode) {
       setEditPoints(prev => [...prev, Math.round(x), Math.round(y)]);
     }
+  };
+
+  const handleUndoPoint = () => {
+    setEditPoints(prev => prev.slice(0, -2));
   };
 
   const handleReserve = async () => {
@@ -326,12 +334,14 @@ function App() {
                         isEditMode={isEditMode}
                         highlightedSeatIds={highlightedSeatIds}
                         isSelectingAnchor={isSelectingAnchor}
+                        activePoints={editPoints}
                       />
                       {isEditMode && (
                         <AreaEditorOverlay 
                           onSave={handleSaveArea}
                           onCancel={() => { setIsEditMode(false); setEditPoints([]); }}
                           onReset={() => setEditPoints([])}
+                          onUndo={handleUndoPoint}
                           currentPoints={editPoints}
                         />
                       )}

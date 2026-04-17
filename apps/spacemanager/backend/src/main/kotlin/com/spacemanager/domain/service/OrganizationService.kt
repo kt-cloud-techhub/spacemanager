@@ -37,13 +37,13 @@ class OrganizationService(
             parentId = org.parent?.id,
             isExecutiveUnit = org.isExecutiveUnit,
             memberCount = getRecursiveMemberCount(org, allOrgs),
-            directMemberCount = org.memberCount.toLong(),
+            directMemberCount = org.memberCount?.toLong() ?: 0L,
             children = children.map { buildTree(it, allOrgs) }
         )
     }
 
     private fun getRecursiveMemberCount(org: Organization, allOrgs: List<Organization>): Long {
-        val direct = org.memberCount.toLong()
+        val direct = org.memberCount?.toLong() ?: 0L
         val children = allOrgs.filter { it.parent?.id == org.id }
         return direct + children.sumOf { getRecursiveMemberCount(it, allOrgs) }
     }
@@ -107,6 +107,6 @@ class OrganizationService(
         level = this.level,
         parentId = this.parent?.id,
         isExecutiveUnit = this.isExecutiveUnit,
-        memberCount = this.memberCount
+        memberCount = this.memberCount ?: 0
     )
 }
